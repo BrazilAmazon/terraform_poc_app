@@ -1,4 +1,4 @@
-data "test_tfe_outputs" "outputs" {
+data "tfe_outputs" "outputs" {
   organization = "ddi-support"
   workspace = "test_tfe_outputs"
 }
@@ -8,7 +8,7 @@ locals {
      #make sure variables key and this key are same!!!
     {
       app1 = {
-        service_plan_id     = data.test_tfe_outputs.outputs.values.appid
+        service_plan_id     = data.tfe_outputs.outputs.values.appid
       }
     },
   )
