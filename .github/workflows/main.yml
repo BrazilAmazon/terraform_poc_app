@@ -1,0 +1,93 @@
+name: "Terraform Plan"
+
+on:
+  workflow_call:
+    inputs:
+      Tf_Cloud_Organization:
+        description: "cloud organization"
+        required: true
+        type: string
+      Tf_Cloud_Hostname:
+        required: true
+        type: string
+      Tf_Workspace:
+        required: true
+        type: string
+      Tf_Destroy:
+        required: true
+        type: string
+    secrets:
+      TF_API_TOKEN:
+       required: true
+      
+
+env:
+  TF_CLOUD_ORGANIZATION : ${{ inputs.Tf_Cloud_Organization }}
+  TF_CLOUD_HOSTNAME : ${{ inputs.Tf_Cloud_Hostname }}
+  TF_WORKSPACE : ${{ inputs.Tf_Workspace }}
+  TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
+  TF_DESTROY: ${{ inputs.Tf_Destroy }}
+ # ARM_CLIENT_ID:  ${{ vars.ARM_CLIENT_ID }}
+ # ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+ # ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+ # ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+   
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          # terraform_version: 0.13.0:
+          cli_config_credentials_token: $TF_TOKEN_app_terraform_io
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: check
+        run: ls .terraform/modules/rg
+        
+      - name: Terraform Destroy Plan
+        run: |
+        
+            echo "------------------------------------------"
+            export exitcode=0
+            autotfvars=()
+            for file in $(ls .); do
+                if [[ "$file" == *auto.tfvars ]]; then
+                    autotfvars+=($PWD/$file)
+                fi
+            done
+            echo "==============================="
+            echo ${autotfvars[0]}
+            echo ${autotfvars[*]}
+            echo $PWD
+            echo "+++++++++++++++++++++++++++++"
+            if [[ "${#autotfvars[@]}" -gt 1 ]] ; then
+                    terraform plan -var-file=<(cat ${autotfvars[*]}) -no-color -out tfplan || export exitcode=$?
+            		echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+                    
+                    if [ $exitcode -eq 1 ]; then
+                      echo Terraform Plan Failed!
+                      exit 1
+                    else 
+                      exit 0
+                    fi
+            else
+                    terraform plan -var-file=<(cat ${autotfvars[0]}) -no-color -out tfplan || export exitcode=$?
+            		echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+                    
+                    if [ $exitcode -eq 1 ]; then
+                      echo Terraform Plan Failed!
+                      exit 1
+                    else 
+                      exit 0
+                    fi
+            fi
+      - name: Terraform Plan
+        run: terraform apply tfplan
