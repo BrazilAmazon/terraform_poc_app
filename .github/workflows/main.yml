@@ -49,7 +49,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
       - name: check modules
-        run: .terraform/modules/appservice
+        run: ls .terraform/modules/appservice
       - name: Terraform Destroy Plan
         run: |
         
