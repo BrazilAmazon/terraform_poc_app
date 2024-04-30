@@ -1,5 +1,5 @@
 
-data "tfe_outputs" "outputs" {
+data "test_tfe_outputs" "outputs" {
   organization = "ddi-support"
   workspace = "test_tfe_outputs"
 }
